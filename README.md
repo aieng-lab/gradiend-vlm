@@ -49,6 +49,8 @@ python -m gradiend.examples.vision_language_smoke pairs.json --task generation
 
 The first command checks the manifest. The other commands load Qwen2.5-VL or Janus-Pro and print scores and gradient contrast norms for one pair. Use a workstation with a suitable GPU for model runs. Group repeated captures by subject and keep each subject in one split when fitting a feature.
 
+For Qwen training, `target_classes=("no_glasses", "glasses")` names the two roles in the JSON. The first name labels `counterfactual_image` with `counterfactual_answer` (`"no"`). The second labels `factual_image` with `factual_answer` (`"yes"`). These names appear in reports and checkpoints. The image paths and answer strings define the actual training pairs.
+
 [Own-data format and training guide](docs/guides/vision-language.md)
 
 ![GRADIEND overview](docs/img/workflow-diagram.png)

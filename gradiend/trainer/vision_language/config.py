@@ -7,7 +7,11 @@ from typing import Optional, Tuple
 
 @dataclass(frozen=True)
 class VisionLanguagePredictionConfig:
-    """The class order corresponds to the manifest's ``a`` and ``b`` columns."""
+    """Name the negative class first and the positive class second.
+
+    In JSON this order is ``counterfactual_image``, then ``factual_image``.
+    For CSV and DataFrame inputs it is side ``a``, then side ``b``.
+    """
 
     target_classes: Tuple[str, str]
     counterfactual_axis: str = "both"

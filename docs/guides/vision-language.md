@@ -13,7 +13,12 @@ Existing understanding datasets can still use CSV or a pandas DataFrame with `gr
 
 ## Fit a Qwen2.5-VL feature
 
-Use your own subject-disjoint training, validation, and test photos. The trainer takes the JSON path as `data`. Order `target_classes` from the counterfactual image's class to the factual image's class.
+Use your own subject-disjoint training, validation, and test photos. The trainer takes the JSON path as `data`. For the README example, `target_classes=("no_glasses", "glasses")` means
+
+- Index 0, `no_glasses`, labels the matching `counterfactual_image` and `counterfactual_answer` (`"no"`). This is the negative pole, with label −1.
+- Index 1, `glasses`, labels the matching `factual_image` and `factual_answer` (`"yes"`). This is the positive pole, with label +1.
+
+The class names are report and checkpoint identifiers. They can be named independently of the model's answer strings. The association comes from tuple order and the JSON field roles. With the glasses photo and answer `"yes"` as the factual anchor, the image swap keeps `"yes"` and uses the bare photo. The text swap keeps the glasses photo and scores `"no"`. The bare photo and answer `"no"` also serve as an anchor, with the swaps reversed.
 
 ```python
 from gradiend import (
@@ -42,7 +47,7 @@ trainer = VisionLanguagePredictionTrainer(
         signal_scope=SignalScope.from_values(
             params=["model.visual.merger.mlp.2.weight", "model.visual.merger.mlp.2.bias"],
         ),
-        pre_prune_config=PrePruneConfig(n_samples=16, topk=65_536, source="diff", batch_size=1),
+        pre_prune_config=PrePruneConfig(n_samples=16, topk=0.05, source="diff", batch_size=1),
         learning_rate=0.003,
         num_train_epochs=4,
         eval_steps=50,
@@ -54,6 +59,12 @@ print(trainer.evaluate_encoder(split="test"))
 ```
 
 Choose `counterfactual_axis="image"` or `"text"` to train on one type of swap. Encoder and decoder effects are measured separately. For decoder evaluation, pass a separate `eval_neutral_data` CSV to the constructor with `group_id`, `split`, `image`, `prompt`, and `answer` columns. Include unrelated validation and test examples, with group IDs and image paths distinct from the paired data. The decoder evaluator chooses a signed edit on validation data and measures grounding and neutral continuation likelihood on test data.
+
+### Choose a pre-pruning budget
+
+`SignalScope` sets which parameters are eligible. In this example it selects the final connector projection's weight and bias, which contain **10,487,808** coordinates in Qwen2.5-VL-3B-Instruct. A float `topk=0.05` keeps **5% of those eligible coordinates**, rounded up to **524,391**. An integer `topk=65_536` keeps that absolute count. Use `topk=1.0` or omit the pre-pruning configuration to retain the entire selected scope.
+
+The pilots used a fixed **65,536-coordinate** budget to limit the width of the fitted feature and the size of stored gradients. That kept **0.625%** of Qwen's selected projection and **1.5625%** of Janus-Pro-1B's selected shared attention output projection. Relative to all tensor elements stored in each checkpoint, the budgets were approximately **0.00175%** and **0.00316%**, respectively. The full VLM still processes each example. The pilots did not establish an optimal budget. The 5% example shows how to set a comparable *fraction* when the scope or model changes.
 
 ## Score generation pairs with Janus
 
