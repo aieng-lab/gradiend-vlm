@@ -11,6 +11,46 @@
 
 GRADIEND (Gradient-based targeted feature learning within neural networks) learns features inside language models by training an encoder-decoder on gradients. Find where a model encodes a feature (e.g. gender, race) and rewrite the model to strengthen or weaken it—for example debias it—while keeping other behaviour. See [GRADIEND: Feature Learning within Neural Networks Exemplified through Biases](https://arxiv.org/abs/2502.01406) (introducing the GRADIEND method), and [The GRADIEND Python Package: An End-to-End System for Gradient-Based Feature Learning](https://aclanthology.org/2026.emnlp-demos.18/) (EMNLP 2026 System Demonstrations; introducing this Python library).
 
+## Vision–language fork
+
+This research fork adds **paired image and text counterfactuals** to GRADIEND. Qwen2.5-VL learns from assistant-answer gradients. Janus-Pro exposes teacher-forced image-token gradients for text-to-image experiments. In both cases you can swap the photo while holding text fixed, or swap the text while holding the photo fixed. The Janus pilot recovered a hat signal in the gradients. Reliable control of hat presence in sampled images remains unverified at the tested layer and strengths.
+
+```bash
+git clone git@github.com:aieng-lab/gradiend-vlm.git
+cd gradiend-vlm
+pip install -e ".[vision]"
+```
+
+Create `pairs.json` next to your images. Put the shared text at the top and list one matched photo pair per row.
+
+```json
+{
+  "prompt": "Is this person wearing glasses? Answer yes or no.",
+  "factual_answer": "yes",
+  "counterfactual_answer": "no",
+  "factual_prompt": "A portrait of a person wearing glasses.",
+  "counterfactual_prompt": "A portrait of a person with no glasses.",
+  "pairs": [
+    {
+      "group_id": "person-01",
+      "split": "train",
+      "factual_image": "photos/person-01-glasses.jpg",
+      "counterfactual_image": "photos/person-01-bare.jpg"
+    }
+  ]
+}
+```
+
+```bash
+python -m gradiend.examples.vision_language_smoke pairs.json --parse-only
+python -m gradiend.examples.vision_language_smoke pairs.json
+python -m gradiend.examples.vision_language_smoke pairs.json --task generation
+```
+
+The first command checks the manifest. The other commands load Qwen2.5-VL or Janus-Pro and print scores and gradient contrast norms for one pair. Use a workstation with a suitable GPU for model runs. Group repeated captures by subject and keep each subject in one split when fitting a feature.
+
+[Own-data format and training guide](docs/guides/vision-language.md)
+
 ![GRADIEND overview](docs/img/workflow-diagram.png)
 
 **Try it in Google Colab:** [Quickstart](https://colab.research.google.com/github/aieng-lab/gradiend/blob/main/gradiend/examples/demo/01_quickstart_english_pronouns.ipynb) · [Sentiment](https://colab.research.google.com/github/aieng-lab/gradiend/blob/main/gradiend/examples/demo/02_sentiment.ipynb) · [Compare features](https://colab.research.google.com/github/aieng-lab/gradiend/blob/main/gradiend/examples/demo/03_compare_features.ipynb) · [Learn your own feature](https://colab.research.google.com/github/aieng-lab/gradiend/blob/main/gradiend/examples/demo/04_learn_your_own_feature.ipynb)

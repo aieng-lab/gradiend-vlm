@@ -224,8 +224,6 @@ class TextModelWithGradiend(ModelWithGradiend):
                  ):
         super().__init__(base_model, gradiend, gradient_creator=gradient_creator, source=source, target=target, **kwargs)
         self.tokenizer = tokenizer
-        if self._gradient_creator is None:
-            self._gradient_creator = self
         self.is_instruction_model = isinstance(self.tokenizer, InstructTokenizerWrapper)
         if self.is_decoder_only_model:
             if self.tokenizer.eos_token is None:

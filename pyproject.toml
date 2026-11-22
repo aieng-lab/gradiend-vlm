@@ -35,6 +35,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+vision = [
+    "transformers>=4.57,<5.0",
+    "torchvision>=0.16",
+    "pillow>=9.2",
+]
 recommended = [
     "accelerate>=0.26.0",
     "safetensors>=0.3.0",

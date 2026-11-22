@@ -481,7 +481,7 @@ class ModelWithGradiend(nn.Module, ABC):
         self._source = source
         self._target = target
 
-        self._gradient_creator = gradient_creator or self
+        self._gradient_creator = gradient_creator or None
 
 
         self.base_model_device_map = base_model_device_map or get_hf_device_map(base_model)
@@ -891,7 +891,7 @@ class ModelWithGradiend(nn.Module, ABC):
 
     @property
     def gradient_creator(self):
-        return self._gradient_creator
+        return self if self._gradient_creator is None else self._gradient_creator
 
     @property
     def param_map_hash(self):

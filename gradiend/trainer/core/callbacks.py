@@ -39,6 +39,10 @@ from gradiend.trainer.core.stats import (
 logger = get_logger(__name__)
 
 
+class EvaluationInputError(ValueError):
+    """Invalid evaluation data that must abort training."""
+
+
 def _config_get(config: Any, key: str, default: Any = None) -> Any:
     if isinstance(config, dict):
         return config.get(key, default)
@@ -218,7 +222,7 @@ def _is_unrecoverable_eval_error(exc: BaseException) -> bool:
     )
     if oom_types and isinstance(exc, oom_types):
         return True
-    if isinstance(exc, MemoryError):
+    if isinstance(exc, (EvaluationInputError, MemoryError)):
         return True
     text = str(exc).lower()
     return "out of memory" in text or "cuda error" in text

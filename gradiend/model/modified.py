@@ -64,7 +64,7 @@ def _input_context(args: Iterable[Any], kwargs: Mapping[str, Any]) -> Dict[str, 
 def _strip_gradiend_only_kwargs(kwargs: Mapping[str, Any]) -> Optional[Dict[str, Any]]:
     """Remove hook-only kwargs before the wrapped Hugging Face model sees them."""
     stripped = None
-    for key in ("prediction_mask",):
+    for key in ("prediction_mask", "prediction_mask_is_generating"):
         if key in kwargs:
             if stripped is None:
                 stripped = dict(kwargs)

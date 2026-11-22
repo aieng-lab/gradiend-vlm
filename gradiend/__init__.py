@@ -74,6 +74,8 @@ __all__ = [
     # Trainers and configs
     "TextPredictionTrainer",
     "TextPredictionConfig",
+    "VisionLanguagePredictionTrainer",
+    "VisionLanguagePredictionConfig",
     "ClmAlignmentError",
     "ClmDivergence",
     "align_clm_divergence",
@@ -161,6 +163,8 @@ _LAZY_IMPORTS = {
     # Text prediction trainer
     "TextPredictionTrainer": ("gradiend.trainer.text.prediction.trainer", "TextPredictionTrainer"),
     "TextPredictionConfig": ("gradiend.trainer.text.prediction.trainer", "TextPredictionConfig"),
+    "VisionLanguagePredictionTrainer": ("gradiend.trainer.vision_language.trainer", "VisionLanguagePredictionTrainer"),
+    "VisionLanguagePredictionConfig": ("gradiend.trainer.vision_language.config", "VisionLanguagePredictionConfig"),
     "ClmAlignmentError": ("gradiend.trainer.text.prediction.clm_alignment", "ClmAlignmentError"),
     "ClmDivergence": ("gradiend.trainer.text.prediction.clm_alignment", "ClmDivergence"),
     "align_clm_divergence": ("gradiend.trainer.text.prediction.clm_alignment", "align_clm_divergence"),

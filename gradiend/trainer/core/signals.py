@@ -753,7 +753,7 @@ class GradientSignalExtractor:
 class ActivationSignalExtractor:
     """Forward-hook extractor for single activation signals."""
 
-    _NON_MODEL_INPUT_KEYS = frozenset({"prediction_mask"})
+    _NON_MODEL_INPUT_KEYS = frozenset({"prediction_mask", "prediction_mask_is_generating"})
 
     def __init__(
         self,
@@ -827,6 +827,10 @@ class ActivationSignalExtractor:
 
     def _expected_input_dim(self) -> Tuple[Optional[int], str]:
         gradiend = getattr(self.model, "gradiend", None)
+        if getattr(gradiend, "signal_kind", None) == "gradient" and not gradiend.kwargs.get("input_signal_space"):
+            # Standalone activation probes can share a parameter-gradient model.
+            # Its parameter count is unrelated to the probed activation width.
+            gradiend = None
         # ``encoder_input_dim`` equals ``input_dim`` unless the model has a separate encoder input
         # space (then it is the width THIS extractor must produce); older stand-ins only have input_dim.
         encoder_dim = getattr(gradiend, "encoder_input_dim", None)
@@ -975,9 +979,10 @@ class ActivationSignalExtractor:
             # span shifted one left), which handles multi-token targets and carries
             # the target-conditioned gradient even though the value there is
             # target-independent. Value signals are unaffected.
+            marks_generating_positions = inputs.get("prediction_mask_is_generating") is True
             selected_mask = (
                 self._generating_positions_mask(prediction_mask)
-                if self._capture_gradient
+                if self._capture_gradient and not marks_generating_positions
                 else prediction_mask
             )
             return self._mean_selected_tokens(
@@ -997,6 +1002,8 @@ class ActivationSignalExtractor:
                 raise ValueError(
                     f"token_selector={selector!r} requires inputs with prediction_mask"
                 )
+            if inputs.get("prediction_mask_is_generating") is True:
+                return self._mean_selected_tokens(activation, prediction_mask, selector_name=str(selector))
             return self._gather_pre_prediction_tokens(
                 activation,
                 prediction_mask,
@@ -1222,6 +1229,8 @@ class ActivationSignalExtractor:
             # want is exactly "predict those filled tokens", so build labels from
             # the prediction mask: target ids where predicted, -100 elsewhere.
             if "labels" not in model_inputs:
+                if prepared.get("prediction_mask_is_generating") is True:
+                    raise ValueError("An explicit generating-position mask requires labels for activation gradients.")
                 labels = self._labels_from_prediction_mask(prepared, model_inputs)
                 if labels is not None:
                     model_inputs = {**model_inputs, "labels": labels}
