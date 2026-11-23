@@ -71,3 +71,20 @@ The pilots used a fixed **65,536-coordinate** budget to limit the width of the f
 Import `load_generation_pairs` and `JanusGenerationTask` from `gradiend.trainer.vision_language`. The loader returns each pair's two resolved image paths and prompts. The task encodes each reference photo once with the frozen visual tokenizer. Use `task.prepare(prompt, codes)` and `task.loss(prepared)` for a differentiable mean cross-entropy over image tokens, or `task.score(prepared)` for summed conditional log probability and token count. The [smoke example](../../gradiend/examples/vision_language_smoke.py) shows how to obtain all four losses and compute both counterfactual gradient contrasts.
 
 For prompt-only activation measurements, the activation at image start depends on the prompt. Image-target gradients can vary at that same position because the loss depends on the reference image tokens. Evaluate any generation edit on actual sampled images with held-out prompts, matched seeds, and controls.
+
+## End-to-end Gros–Straub pipeline
+
+`vlm_prepare_gros_straub.py` downloads and pairs matched `vanilla` vs. `glasses` or `hat` portraits from the public Mendeley Data archives (`bpy24trj6s`, `ycjd7mdsbs`, `55wmmr8j3g`, `zsv3bgp7t4`) into a `pairs.json` manifest with subject-disjoint `train`, `validation`, and `test` splits:
+
+```bash
+python -m gradiend.examples.vlm_prepare_gros_straub --concept glasses --output data/gros_straub_glasses
+python -m gradiend.examples.vlm_prepare_gros_straub --concept hat --output data/gros_straub_hats
+```
+
+You can then pass `data/gros_straub_glasses/pairs.json` directly to `VisionLanguagePredictionTrainer` (replace `data="pairs.json"` in the Qwen2.5-VL snippet above) or run the full Janus-Pro gradient extraction, GRADIEND training, and causal steering sweep:
+
+```bash
+python -m gradiend.examples.vlm_janus_steering data/gros_straub_glasses/pairs.json --output runs/janus_glasses --strengths 1.0 1.5
+```
+
+This writes `steering_panel.png` and individual `baseline`, `more`, `less`, and `random` images under `runs/janus_glasses/`.

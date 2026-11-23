@@ -13,7 +13,7 @@ GRADIEND (Gradient-based targeted feature learning within neural networks) learn
 
 ## Vision–language fork
 
-This research fork adds **paired image and text counterfactuals** to GRADIEND. Qwen2.5-VL learns from assistant-answer gradients. Janus-Pro exposes teacher-forced image-token gradients for text-to-image experiments. In both cases you can swap the photo while holding text fixed, or swap the text while holding the photo fixed. The Janus pilot recovered a hat signal in the gradients. Reliable control of hat presence in sampled images remains unverified at the tested layer and strengths.
+This research fork adds **paired image and text counterfactuals** to GRADIEND. Qwen2.5-VL learns from assistant-answer gradients. Janus-Pro exposes teacher-forced image-token gradients for text-to-image experiments. In both cases you can swap the photo while holding text fixed, or swap the text while holding the photo fixed. On Janus-Pro-1B (layer 11 `self_attn.o_proj.weight`), GRADIEND weight edits at `1.0`–`1.5`× the mapped weight norm causally add and remove both **hats** and **glasses** in sampled images while preserving unrelated prompt adherence.
 
 ```bash
 git clone git@github.com:aieng-lab/gradiend-vlm.git
@@ -48,6 +48,21 @@ python -m gradiend.examples.vision_language_smoke pairs.json --task generation
 ```
 
 The first command checks the manifest. The other commands load Qwen2.5-VL or Janus-Pro and print scores and gradient contrast norms for one pair. Use a workstation with a suitable GPU for model runs. Group repeated captures by subject and keep each subject in one split when fitting a feature.
+
+### Run the full pipeline on Gros–Straub (hats or glasses)
+
+To reproduce the end-to-end pipeline on the public Gros–Straub portrait dataset (fetched via HTTP range requests without storing source ZIPs) and render Janus-Pro steering contact sheets:
+
+```bash
+# 1. Prepare matched glasses (or --concept hat) pairs.json
+python -m gradiend.examples.vlm_prepare_gros_straub --concept glasses --output data/gros_straub_glasses
+
+# 2. Smoke-check one pair
+python -m gradiend.examples.vision_language_smoke data/gros_straub_glasses/pairs.json --task generation
+
+# 3. Extract gradients, train GRADIEND, and render steered images + steering_panel.png
+python -m gradiend.examples.vlm_janus_steering data/gros_straub_glasses/pairs.json --output runs/janus_glasses --strengths 1.0 1.5
+```
 
 For Qwen training, `target_classes=("no_glasses", "glasses")` names the two roles in the JSON. The first name labels `counterfactual_image` with `counterfactual_answer` (`"no"`). The second labels `factual_image` with `factual_answer` (`"yes"`). These names appear in reports and checkpoints. The image paths and answer strings define the actual training pairs.
 
